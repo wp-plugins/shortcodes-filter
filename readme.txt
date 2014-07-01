@@ -4,7 +4,7 @@ Donate link: https://wordpress.org/plugins/wiziapp-create-your-own-native-iphone
 Tags: shortcodes, filter, wiziapp, mobile, mobile theme, theme switcher
 Requires at least: 3.0.1
 Tested up to: 3.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,6 +36,10 @@ e.g.
 
 == Changelog ==
 
+= 1.0.1 =
+
+- Fixed bug in settings page
+- Cleaned up global scope
 
 
 == Upgrade Notice ==

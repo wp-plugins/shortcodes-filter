@@ -3,139 +3,72 @@
 Plugin Name: Shortcodes Filter
 Description: Filter certain shortcodes out of posts and pages on mobile or desktop display
 Author URI: https://wordpress.org/plugins/wiziapp-create-your-own-native-iphone-app/
-Version: 1.0.0
+Version: 1.0.1
 Author: Wiziapp
 */
 
-function my_the_content_filter($content) {
-	global $mobile_filters;
-	global $desktop_filters;
-	if( wp_is_mobile()) {
-		
-		foreach( $mobile_filters as $m ) {
-/*			
-if( preg_match('#\[.*?'.$m.'.*?\]#') ) {
-	if ( preg_match( REGEX_2 ) ) {
-		preg_replace( REGEX_3 , '', $content);
-	} else {
-		preg_replace('#\[.*?'.$m.'.*?\]#', '', $content);
+function shortcodes_filter_my_the_content_filter($content) {
+	foreach( shortcodes_filter_get_filters() as $m ) {
+		$content = preg_replace('#\[[^]]*?'.$m.'[^]]*?\](?:[^[]*\[[^]]*?/[^]]*?'.$m.'[^]]*?\])?#', '', $content);
 	}
+	return $content;
 }
-*/		
-			//$content = preg_replace('#\[.*?'.$m.'.*?\]#', '', $content);
-			$content = preg_replace('#\[[^]]*?'.$m.'[^]]*?\](?:[^[]*\[[^]]*?/[^]]*?'.$m.'[^]]*?\])?#', '', $content);
+add_filter( 'the_content', 'shortcodes_filter_my_the_content_filter' );
+
+
+function shortcodes_filter_your_function_name() {
+	global $shortcode_tags;	
+
+	foreach( shortcodes_filter_get_filters() as $m ) {
+		
+		foreach ($shortcode_tags as $j => $k) {
+			// echo '$m: ' . $m . ' $j: ' . $j . ' $k: ' . $k . "<br>";
+			if( strpos( $m , $j ) !== -1 ) {
+				
+				unset( $shortcode_tags[$j] );
+			}
 			
 		}
 		
-		
-	} else {
-		
-		if( $desktop_filters != null ) {
-		
-			foreach( $desktop_filters as $m ) {
-				
-				$content = preg_replace('#\[[^]]*?'.$m.'[^]]*?\](?:[^[]*\[[^]]*?/[^]]*?'.$m.'[^]]*?\])?#', '', $content);
-				
-			}
-		}
-		
 	}
-	return $content;
-	/*if( wp_is_mobile() ) {  
-		return preg_replace('#\[.*?SUB_STRING_TO_BE_SEARCHED.*?\]#', '', $content);
-	} else {
-		return $content;
-	} */ 
 }
-add_filter( 'the_content', 'my_the_content_filter' );
+add_action( 'pre_get_posts', 'shortcodes_filter_your_function_name' );
 
-$mobile_filters;
-$desktop_filters;
-
-function your_function_name() {
-	global $shortcode_tags;	
-	
-	global $mobile_filters;
-	global $desktop_filters;
-	
+function shortcodes_filter_get_filters()
+{
+	$filters = array();
+	$val =  wp_is_mobile()?'Mobile':'Desktop';
 	for( $i = 0 ; $i < 10 ; $i++ ) {
 		$labdevs_option = get_option('labdevs_text_field_' . $i);
 		if( $labdevs_option != '' ) {
 			$labdevs_select = get_option('labdevs_select_field_' . $i);
-			if($labdevs_select == 'Mobile') {
-				$mobile_filters[] = $labdevs_option;
-			} else {
-				$desktop_filters[] = $labdevs_option;
+			if($labdevs_select === $val) {
+				$filters[] = $labdevs_option;
 			}
 		}
 	}
-	//var_dump($mobile_filters);
-	//var_dump($desktop_filters);
-	
-	
-	if( wp_is_mobile()) {
-		
-		foreach( $mobile_filters as $m ) {
-			
-			foreach ($shortcode_tags as $j => $k) {
-				//echo '$m: ' . $m . ' $j: ' . $j . ' $k: ' . $k . "<br>";
-				if( strpos( $m , $j ) !== -1 ) {
-					
-					unset( $shortcode_tags[$j] );
-				}
-				
-			}
-			
-		}
-		
-		
-	} else {
-		
-		if( $desktop_filters != null ) {
-		
-			foreach( $desktop_filters as $m ) {
-				
-				foreach ($shortcode_tags as $j => $k) {
-					// echo '$m: ' . $m . ' $j: ' . $j . ' $k: ' . $k . "<br>";
-					if( strpos( $m , $j ) !== -1 ) {
-						
-						unset( $shortcode_tags[$j] );
-					}
-					
-				}
-				
-			}
-		}
-		
-	}
-}
-add_action( 'pre_get_posts', 'your_function_name' );
-
-
-add_action( 'admin_menu', 'register_my_custom_menu_page' );
-function register_my_custom_menu_page(){
-    add_menu_page( 'Shortcode Filter', 'Shortcode Filter', 'manage_options', 'shortcode-filter', 'my_custom_menu_page');    
+	return $filters;
 }
 
 
-add_action( 'wp_ajax_labdevs_settings_update', 'labdevs_settings_update_callback' );
-function labdevs_settings_update_callback() {
+add_action( 'admin_menu', 'shortcodes_filter_register_my_custom_menu_page' );
+function shortcodes_filter_register_my_custom_menu_page(){
+    add_menu_page( 'Shortcode Filter', 'Shortcode Filter', 'manage_options', 'shortcode-filter', 'shortcodes_filter_my_custom_menu_page');    
+}
+
+
+add_action( 'wp_ajax_labdevs_settings_update', 'shortcodes_filter_labdevs_settings_update_callback' );
+function shortcodes_filter_labdevs_settings_update_callback() {
 	$params = array();
 	parse_str($_POST['data'], $params);
 	foreach( $params as $k => $v ) {
-
-		update_option( $k , $v );
+		if (preg_match('!^labdevs_(select|text)_field_[0-9]+$!', $k))
+			update_option( $k , $v );
 	}	
 }
 
-function my_custom_menu_page(){
+function shortcodes_filter_my_custom_menu_page(){
     ?>
-    <script>
-function labdevs_show_settings_saved() {
-   jQuery('.labdevs_small_success').fadeIn(500);
-   setTimeout( function(){ jQuery('.labdevs_small_success').fadeOut(500); } , 5000 );
-}
-</script>
 <div class="labdevs_small_success" style="position: fixed; top: 40px; left: 0px; z-index: 100000; width: 100%; padding: 10px; text-align: center; height: auto; display: none;">
     <span style="
     color: white;
@@ -148,23 +81,22 @@ function labdevs_show_settings_saved() {
   </div>
     <div class="wrap">
 		<h2>Shortcode filter</h2>
-		<script>
+		<script type="text/javascript">
 			jQuery(document).ready(function($){
 				jQuery('.labdevs_settings_button_save_changes').click(function() {					
 						var key = jQuery(this).attr('id');
 						var value = jQuery(this).val();
 						$.ajax({			
 							type: "POST",
-							url: "<?php echo admin_url('admin-ajax.php'); ?>",
+							url: ajaxurl,
 							data: { 
 								action: 'labdevs_settings_update',
 								data : jQuery('.the_settings').serialize()								
 							}
 						}).done(function( data ) {				
-								console.log(data);
-								labdevs_show_settings_saved();							
+							jQuery('.labdevs_small_success').fadeIn(500);
+							setTimeout( function(){ jQuery('.labdevs_small_success').fadeOut(500); } , 5000 );
 						});
-					
 				});
 				
 			});
@@ -188,12 +120,8 @@ function labdevs_show_settings_saved() {
 					 <span>Filter Shortcodes From: </span>
 					<?php $select_field = get_option('labdevs_select_field_' . $i); ?>
 					<select style="width:200px;" name="labdevs_select_field_<?php echo $i ?>" class="labdevs_select_field" value="">
-						<option <?php if( $select_field == 'Desktop' ) echo 'selected' ?>>
-							Desktop
-						</option>
-						<option <?php if( $select_field == 'Mobile' ) echo 'selected' ?>>
-							Mobile
-						</option>
+						<option <?php if( $select_field == 'Desktop' ) echo 'selected="selected"' ?>>Desktop</option>
+						<option <?php if( $select_field == 'Mobile' ) echo 'selected="selected"' ?>>Mobile</option>
 					</select>
 				</td>
 			</tr>			
@@ -214,4 +142,3 @@ function labdevs_show_settings_saved() {
     </div>
     <?php	
 }
-?>
